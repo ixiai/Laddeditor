@@ -102,6 +102,8 @@ function draw(canvas) {
         blockType.draw(block, ctx);
         ctx.restore();
     }
+    ctx.font = "0.3px Arial";
+    ctx.textBaseline = "middle";
     // Draw tags
     for (let block of Object.values(blocks)) {
         ctx.save();
@@ -113,8 +115,6 @@ function draw(canvas) {
         scale,
         block.nameTag.angle || 0,
         ctx);
-        ctx.font = "0.3px Arial";
-        ctx.textBaseline = "middle";
         ctx.fillText(block.nameTag.value, 0, 0);
     }
     transformCanvas(0, 0, 1, 0, ctx);
