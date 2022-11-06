@@ -37,15 +37,135 @@ let colours = {
 };
 
 const blocksDef = {
+    power: {
+        draw: function (block, ctx) {
+            ctx.lineWidth = 0.05;
+            ctx.beginPath();
+            ctx.moveTo(0.4, 0.05);
+            ctx.lineTo(0.6, 0.05);
+            ctx.lineTo(0.5, 0.5);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(0.5, 0.2);
+            ctx.lineTo(0.5, 1);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0.4, 0.7);
+            ctx.lineTo(0.6, 0.6);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0.4, 0.6);
+            ctx.lineTo(0.6, 0.5);
+            ctx.stroke();
+        },
+        pins: [
+            {
+                position: {
+                    x: 0.5,
+                    y: 1
+                }
+            }
+        ]
+    },
     switch: {
         draw: function (block, ctx) {
-            ctx.fillText("TEST", 0, 0.5);
-        }
+            ctx.lineWidth = 0.05;
+            ctx.beginPath();
+            ctx.moveTo(0.5, 0);
+            ctx.lineTo(0.5, 1);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0.8, 0.5);
+            ctx.lineTo(block.state == "closed" ? 0.5 : 0.2, 0.5);
+            ctx.stroke();
+        },
+        pins: [
+            {
+                position: {
+                    x: 0.5,
+                    y: 0
+                }
+            },
+            {
+                position: {
+                    x: 0.5,
+                    y: 1
+                }
+            }
+        ]
+    },
+    switch2: {
+        draw: function (block, ctx) {
+            ctx.lineWidth = 0.05;
+            ctx.beginPath();
+            ctx.moveTo(0.5, 0);
+            ctx.lineTo(0.5, 1);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0.5, 0.5);
+            ctx.lineTo(block.direction == "left" ? 0 : 1, 0.5);
+            ctx.stroke();
+            let direction = block.direction == "left" ? -1 : 1;
+            let state = block.state == "straight" ? 1 : 0;
+            ctx.beginPath();
+            ctx.moveTo(0.5 - direction * 0.2 * (!state), 0.75 + 0.2 * (!state));
+            ctx.lineTo(0.5 + 0.25 * direction + 0.2 * direction * state, 0.5 - 0.2 * state);
+            ctx.stroke();
+        },
+        pins: [
+            {
+                position: {
+                    x: 0.5,
+                    y: 0
+                }
+            },
+            {
+                position: {
+                    x: 0.5,
+                    y: 1
+                }
+            }
+        ]
     },
     neutralRelay: {
         draw: function (block, ctx) {
-
-        }
+            ctx.lineWidth = 0.05;
+            ctx.beginPath();
+            ctx.arc(0.5, 0.5, 0.35, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0.5, 0);
+            ctx.lineTo(0.5, 0.15);
+            ctx.stroke();
+            ctx.lineWidth = 0.03;
+            ctx.beginPath();
+            ctx.moveTo(0.075, 0.25);
+            ctx.lineTo(0.075, 0.75);
+            ctx.stroke();
+            let highLow = block.state == "on" ? -1 : 1;
+            ctx.moveTo(0.025, 0.5 + highLow * 0.15);
+            ctx.lineTo(0.075, 0.5 + highLow * 0.25);
+            ctx.lineTo(0.125, 0.5 + highLow * 0.15);
+            ctx.stroke();
+            ctx.lineWidth = block.retardedOn ? 0.12 : 0.05;
+            ctx.beginPath();
+            ctx.moveTo(0.15, 0.15);
+            ctx.lineTo(0.85, 0.15);
+            ctx.stroke();
+            ctx.lineWidth = block.retardedOff ? 0.12 : 0.05;
+            ctx.beginPath();
+            ctx.moveTo(0.15, 0.85);
+            ctx.lineTo(0.85, 0.85);
+            ctx.stroke();
+        },
+        pins: [
+            {
+                position: {
+                    x: 0.5,
+                    y: 0
+                }
+            }
+        ]
     }
 };
 
@@ -63,17 +183,54 @@ function init() {
 function loadSchematic() {
     wires = {};
     blocks = {};
+    blocks["gebfbad"] = {
+        type: "power",
+        x: 2,
+        y: 1,
+        angle: 2 * Math.PI,
+        nameTag: {
+            //offsetX: 0,
+            //offsetY: 0,
+            //angle: 0,
+            position: "top",
+            value: "24Vcc"
+        }
+    };
     blocks["te4h9t4t4"] = {
         type: "switch",
         x: 2,
         y: 2,
         angle: 2 * Math.PI,
         nameTag: {
-            offsetX: 0,
-            offsetY: 0,
-            angle: 0,
-            value: "Nome1"
-        }
+            position: "right",
+            value: "Name1"
+        },
+        state: "closed"
+    };
+    blocks["bfuf9fb9w"] = {
+        type: "switch2",        // 2-way switch
+        x: 2,
+        y: 3,
+        angle: 2 * Math.PI,
+        nameTag: {
+            position: "left",
+            value: "Name2"
+        },
+        direction: "right",     // coming from top, goes either down or right
+        state: "straight"       // circuit is closed going straight
+    };
+    blocks["ey3y34y34"] = {
+        type: "neutralRelay",
+        x: 2,
+        y: 4,
+        angle: 2 * Math.PI,
+        nameTag: {
+            position: "bottom",
+            value: "Relay1"
+        },
+        state: "on",
+        retardedOn: 0,
+        retardedOff: 3
     };
 }
 
@@ -98,7 +255,8 @@ function draw(canvas) {
         ctx.textBaseline = "middle";
         ctx.fillStyle = '#FF000050';
         ctx.fillRect(0, 0, 1, 1);
-        ctx.fillStyle = 'black';
+        ctx.fillStyle = colours.line;
+        ctx.strokeStyle = colours.line;
         blockType.draw(block, ctx);
         ctx.restore();
     }
@@ -110,18 +268,22 @@ function draw(canvas) {
         if (block.type == null) throw new Error("Block type is null", block);
         const blockType = blocksDef[block.type];
         if (blockType == null) throw new Error("Block type " + block.type + " does not exist", block);
-        transformCanvas((block.x + (block.nameTag.offsetX || 0)) * scale,
-        (block.y + (block.nameTag.offsetY || 0)) * scale,
-        scale,
-        block.nameTag.angle || 0,
-        ctx);
+        let offsetX = block.nameTag.position == "left" ? 0 : (block.nameTag.position == "right" ? 1 : 0.5);
+        let offsetY = block.nameTag.position == "top" ? -0.1 : (block.nameTag.position == "bottom" ? 1.1 : 0.5);
+        ctx.textBaseline = block.nameTag.position == "top" ? "Bottom" : (block.nameTag.position == "bottom" ? "Top" : "Middle");
+        ctx.textAlign = block.nameTag.position == "left" ? "right" : (block.nameTag.position == "right" ? "left" : "center");
+        transformCanvas((block.x + offsetX) * scale,
+            (block.y + offsetY) * scale,
+            scale,
+            block.nameTag.angle || 0,
+            ctx);
         ctx.fillText(block.nameTag.value, 0, 0);
     }
     transformCanvas(0, 0, 1, 0, ctx);
 }
 
 function prova(canvas = document.getElementById("canvas")) {
-    blocks["te4h9t4t4"].angle += 0.05;
+    //blocks["te4h9t4t4"].angle += 0.05;
     draw(canvas);
 }
 setInterval(prova, 50);
@@ -133,17 +295,19 @@ function transformCanvas(x, y, scale, angle, ctx) {
     // get direction and length of y axis that is 90 deg CW of x axis and same length
     const [yAX, yAY] = [-xAY, xAX];  // swap and negate new x
     // set the transform
-    ctx.setTransform(xAX, xAY, yAX, yAY, x - xAX / 2 - yAX  / 2, y - xAY / 2 - yAY / 2);
-
+    ctx.setTransform(xAX, xAY, yAX, yAY, x - xAX / 2 - yAX / 2, y - xAY / 2 - yAY / 2);
 }
 
-function resizeGameCanvas(canvas = document.getElementById("canvas")) {
+function resizeGameCanvas(c) {
+    let canvas = document.getElementById("canvas") || c;
     var dpi = window.devicePixelRatio || 1;
     var width = window.innerWidth;
     var height = window.innerHeight;
-    var app_container = document.getElementById('canvas');
-    app_container.style.width = width + "px";
-    app_container.style.height = height + "px";
+    canvas.style.width = width + "px";
+    canvas.style.height = height + "px";
+    canvas.style.top = "0px";
+    canvas.style.left = "0px";
+    canvas.style.position = "absolute";
 
     canvas.width = width * dpi;
     canvas.height = height * dpi;
