@@ -194,7 +194,13 @@ function loadSchematic() {
             //angle: 0,
             position: "top",
             value: "24Vcc"
-        }
+        },
+        pins: [
+            {
+                x: 0.5,
+                y: 1
+            }
+        ]
     };
     blocks["te4h9t4t4"] = {
         type: "switch",
@@ -205,7 +211,17 @@ function loadSchematic() {
             position: "right",
             value: "Name1"
         },
-        state: "closed"
+        state: "closed",
+        pins: [
+            {
+                x: 0.5,
+                y: 0
+            },
+            {
+                x: 0.5,
+                y: 1
+            }
+        ]
     };
     blocks["bfuf9fb9w"] = {
         type: "switch2",        // 2-way switch
@@ -217,7 +233,21 @@ function loadSchematic() {
             value: "Name2"
         },
         direction: "right",     // coming from top, goes either down or right
-        state: "straight"       // circuit is closed going straight
+        state: "straight",      // circuit is closed going straight
+        pins: [
+            {
+                x: 0.5,
+                y: 0
+            },
+            {
+                x: 0.5,
+                y: 1
+            },
+            {
+                x: 0.5,
+                y: 0.5
+            }
+        ]
     };
     blocks["ey3y34y34"] = {
         type: "neutralRelay",
@@ -230,8 +260,89 @@ function loadSchematic() {
         },
         state: "on",
         retardedOn: 0,
-        retardedOff: 3
+        retardedOff: 0,
+        pins: [
+            {
+                x: 0.5,
+                y: 0
+            }
+        ]
     };
+    blocks["g9rbg94a"] = {
+        type: "neutralRelay",
+        x: 4,
+        y: 4,
+        angle: 2 * Math.PI,
+        nameTag: {
+            position: "bottom",
+            value: "Relay2"
+        },
+        state: "off",
+        retardedOn: 0,
+        retardedOff: 0,
+        pins: [
+            {
+                x: 0.5,
+                y: 0
+            }
+        ]
+    };
+    blocks["lr18hrna"] = {
+        type: "neutralRelay",
+        x: 5,
+        y: 4,
+        angle: 2 * Math.PI,
+        nameTag: {
+            position: "bottom",
+            value: "Relay3"
+        },
+        state: "off",
+        retardedOn: 0,
+        retardedOff: 3,
+        pins: [
+            {
+                x: 0.5,
+                y: 0
+            }
+        ]
+    };
+
+    wires["bg982wgb9"] = [
+        {
+            type: "blockPin",
+            block: "bfuf9fb9w",
+            pin: 2
+        },
+        {
+            type: "position",
+            positionId: "gf97b79842b",
+            x: 4,
+            y: 3
+        },
+        {
+            type: "blockPin",
+            block: "g9rbg94a",
+            pin: 0
+        }
+    ];
+    wires["908rh90bra"] = [
+        {
+            type: "wireNode",
+            wire: "bg982wgb9",
+            nodeId: "gf97b79842b"
+        },
+        {
+            type: "position",
+            positionId: "gvb9egba",
+            x: 5,
+            y: 3
+        },
+        {
+            type: "blockPin",
+            block: "lr18hrna",
+            pin: 0
+        }
+    ];
 }
 
 let X = false;
@@ -240,7 +351,7 @@ function draw(canvas) {
     const ctx = canvas.getContext("2d");
     transformCanvas(0, 0, 1, 0, ctx);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const scale = 64;
+    const scale = 164;
     // Draw blocks
     for (let block of Object.values(blocks)) {
         ctx.save();
@@ -260,9 +371,9 @@ function draw(canvas) {
         blockType.draw(block, ctx);
         ctx.restore();
     }
+    // Draw tags
     ctx.font = "0.3px Arial";
     ctx.textBaseline = "middle";
-    // Draw tags
     for (let block of Object.values(blocks)) {
         ctx.save();
         if (block.type == null) throw new Error("Block type is null", block);
@@ -279,6 +390,60 @@ function draw(canvas) {
             ctx);
         ctx.fillText(block.nameTag.value, 0, 0);
     }
+    // Draw wires
+    ctx.save();
+    ctx.lineWidth = 0.05;
+    for (let wire of Object.values(wires)) {
+        ctx.strokeStyle = colours.line;
+        ctx.fillStyle = colours.line;
+        ctx.beginPath();
+        let beginning = true;
+        let nodesToDraw = [];
+        for (let node of Object.values(wire)) {
+            let x;
+            let y;
+            switch (node.type) {
+                case "position":
+                    x = node.x + 0.5;
+                    y = node.y + 0.5;
+                    transformCanvas(0, 0, scale, 0, ctx);
+                    break;
+                case "blockPin":
+                    let block = blocks[node.block];
+                    x = block.pins[node.pin].x;
+                    y = block.pins[node.pin].y;
+                    transformCanvas(block.x * scale, block.y * scale, scale, block.angle, ctx);
+                    break;
+                case "wireNode":
+                    let i = 0;
+                    for (let j in Object.keys(wires[node.wire])) {
+                        if (wires[node.wire][j].positionId == node.nodeId) {
+                            i = j;
+                            continue;
+                        }
+                    }
+                    x = wires[node.wire][i].x + 0.5;
+                    y = wires[node.wire][i].y + 0.5;
+                    nodesToDraw.push({x: x, y: y});
+                    transformCanvas(0, 0, scale, 0, ctx);
+                    break;
+            }
+            if (beginning) {
+                beginning = false;
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        ctx.stroke();
+        for (let node of nodesToDraw) {
+            transformCanvas(0, 0, scale, 0, ctx);
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, 0.075, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    }
+    ctx.restore();
     transformCanvas(0, 0, 1, 0, ctx);
 }
 
