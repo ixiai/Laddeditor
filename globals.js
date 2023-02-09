@@ -10,6 +10,7 @@ let scale = 40;
 let selectedBlockId;
 let selectedWireId;
 let placingNewItem = null;
+let placingNewWire = false;
 let lastMouseCoords = {};
 let typingNewName = false;
 
@@ -150,10 +151,6 @@ const blocksDef = {
             ctx.beginPath();
             ctx.arc(0.5, 0.5, 0.35, 0, 2 * Math.PI);
             ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(0.5, 0);
-            ctx.lineTo(0.5, 0.15);
-            ctx.stroke();
             ctx.lineWidth = 0.03;
             ctx.beginPath();
             ctx.moveTo(0.075, 0.25);
@@ -164,6 +161,7 @@ const blocksDef = {
             ctx.lineTo(0.075, 0.5 + highLow * 0.25);
             ctx.lineTo(0.125, 0.5 + highLow * 0.15);
             ctx.stroke();
+            ctx.lineWidth = 0.05;
             ctx.beginPath();
             ctx.moveTo(0.15, 0.15);
             ctx.lineTo(0.85, 0.15);
@@ -171,6 +169,15 @@ const blocksDef = {
             ctx.beginPath();
             ctx.moveTo(0.15, 0.85);
             ctx.lineTo(0.85, 0.85);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(0, 0.5);
+            ctx.lineTo(0.15, 0.5);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(1, 0.5);
+            ctx.lineTo(0.85, 0.5);
             ctx.stroke();
 
             ctx.save();
@@ -194,5 +201,93 @@ const blocksDef = {
                 }
             }
         ]
-    }
+    },
+    oscillatingRelay: {
+        draw: function (block, ctx) {
+            ctx.lineWidth = 0.05;
+            ctx.beginPath();
+            ctx.arc(0.5, 0.5, 0.35, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0.15, 0.15);
+            ctx.lineTo(0.85, 0.15);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0.15, 0.85);
+            ctx.lineTo(0.85, 0.85);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(0.5, 0);
+            ctx.lineTo(0.5, 0.15);
+            ctx.stroke();
+
+            ctx.save();
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.beginPath();
+            ctx.arc(0.5, 0.5, 0.35, Math.PI / 4 * 3, Math.PI / 4 * 5);
+            ctx.lineTo(0.5, 0.5);
+            ctx.arc(0.5, 0.5, 0.35, Math.PI / 4 * 7, Math.PI / 4 * 9);
+            ctx.lineTo(0.5, 0.5);
+            ctx.fill();
+            ctx.restore();
+        },
+        pins: [
+            {
+                position: {
+                    x: 0,
+                    y: 0.5
+                }
+            },
+            {
+                position: {
+                    x: 1,
+                    y: 0.5
+                }
+            }
+        ]
+    },
+    mechanicallyBistableRelay: {
+        draw: function (block, ctx) {
+            ctx.lineWidth = 0.05;
+            ctx.beginPath();
+            ctx.arc(0.25, 0.5, 0.2, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(0.75, 0.5, 0.2, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0.382, 0.35);
+            ctx.lineTo(0.618, 0.65);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0.382, 0.65);
+            ctx.lineTo(0.618, 0.35);
+            ctx.stroke();
+            
+            
+            ctx.beginPath();
+            ctx.moveTo(0, 0.5);
+            ctx.lineTo(0.05, 0.5);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(1, 0.5);
+            ctx.lineTo(0.95, 0.5);
+            ctx.stroke();
+        },
+        pins: [
+            {
+                position: {
+                    x: 0,
+                    y: 0.5
+                }
+            },
+            {
+                position: {
+                    x: 1,
+                    y: 0.5
+                }
+            }
+        ]
+    },
 };

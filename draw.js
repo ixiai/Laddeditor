@@ -32,6 +32,11 @@ function draw() {
         drawWire(wire);
     }
 
+    // Draw placing wire
+    if (placingNewWire !== false && placingNewWire.length) {
+        drawWire(placingNewWire, lastMouseCoords.x, lastMouseCoords.y);
+    }
+
     // Draw placing item
     if (placingNewItem != null) {
         drawBlock(
@@ -90,7 +95,7 @@ function drawTag(block, x = block.x, y = block.y, nameTagValue = block.nameTag.v
     ctx.restore();
 }
 
-function drawWire(wire) {
+function drawWire(wire, x = undefined, y = undefined) {
     ctx.save();
     ctx.beginPath();
     let beginning = true;
@@ -124,6 +129,9 @@ function drawWire(wire) {
         } else {
             ctx.lineTo(x, y);
         }
+    }
+    if (x != undefined && y != undefined) {
+        ctx.lineTo(Math.round(x / scale) + 0.5, Math.round(y / scale) + 0.5);
     }
     ctx.stroke();
     for (let node of nodesToDraw) {
