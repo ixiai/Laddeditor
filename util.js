@@ -32,9 +32,13 @@ function pDistance(x, y, x1, y1, x2, y2) {
 
 
 let colours = {
-    bg: "#E0E0E0",
-    line: "#000000"
+    bg: "#000000",
+    line: "#E0E0E0"
 };
+
+let scale = 40;
+let selectedBlockId;
+let selectedWireId;
 
 const blocksDef = {
     power: {
@@ -174,6 +178,7 @@ let blocks = {};
 
 function init() {
     let canvas = document.getElementById("canvas");
+    canvas.addEventListener("mousedown", onmousedown);
     loadSchematic();
     resizeGameCanvas(canvas);
 
@@ -343,6 +348,13 @@ function loadSchematic() {
             pin: 0
         }
     ];
+
+
+
+
+
+
+    computeWireCoords();
 }
 
 let X = false;
@@ -351,9 +363,12 @@ function draw(canvas) {
     const ctx = canvas.getContext("2d");
     transformCanvas(0, 0, 1, 0, ctx);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const scale = 164;
+    ctx.fillStyle = colours.bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = colours.line;
     // Draw blocks
-    for (let block of Object.values(blocks)) {
+    for (let id in blocks) {
+        let block = blocks[id];
         ctx.save();
         if (block.type == null) throw new Error("Block type is null", block);
         const blockType = blocksDef[block.type];
@@ -364,8 +379,10 @@ function draw(canvas) {
         ctx.clip(squarePath);
         ctx.font = "0.3px Arial";
         ctx.textBaseline = "middle";
-        ctx.fillStyle = '#FF000050';
-        ctx.fillRect(0, 0, 1, 1);
+        if (id == selectedBlockId) {
+            ctx.fillStyle = '#FF000050';
+            ctx.fillRect(0, 0, 1, 1);
+        }
         ctx.fillStyle = colours.line;
         ctx.strokeStyle = colours.line;
         blockType.draw(block, ctx);
@@ -392,27 +409,24 @@ function draw(canvas) {
     }
     // Draw wires
     ctx.save();
-    ctx.lineWidth = 0.05;
-    for (let wire of Object.values(wires)) {
+    for (let id in wires) {
+        ctx.lineWidth = id == selectedWireId ? 0.15 : 0.05;
+        let wire = wires[id];
         ctx.strokeStyle = colours.line;
         ctx.fillStyle = colours.line;
         ctx.beginPath();
         let beginning = true;
         let nodesToDraw = [];
         for (let node of Object.values(wire)) {
-            let x;
-            let y;
+            let x = node.coords.x;
+            let y = node.coords.y;
             switch (node.type) {
                 case "position":
-                    x = node.x + 0.5;
-                    y = node.y + 0.5;
                     transformCanvas(0, 0, scale, 0, ctx);
                     break;
                 case "blockPin":
                     let block = blocks[node.block];
-                    x = block.pins[node.pin].x;
-                    y = block.pins[node.pin].y;
-                    transformCanvas(block.x * scale, block.y * scale, scale, block.angle, ctx);
+                    transformCanvas(0, 0, scale, block.angle, ctx);
                     break;
                 case "wireNode":
                     let i = 0;
@@ -422,9 +436,7 @@ function draw(canvas) {
                             continue;
                         }
                     }
-                    x = wires[node.wire][i].x + 0.5;
-                    y = wires[node.wire][i].y + 0.5;
-                    nodesToDraw.push({x: x, y: y});
+                    nodesToDraw.push({ x: x, y: y });
                     transformCanvas(0, 0, scale, 0, ctx);
                     break;
             }
@@ -447,11 +459,46 @@ function draw(canvas) {
     transformCanvas(0, 0, 1, 0, ctx);
 }
 
-function prova(canvas = document.getElementById("canvas")) {
-    //blocks["te4h9t4t4"].angle += 0.05;
-    draw(canvas);
+function computeWireCoords() {
+    for (let wire of Object.values(wires)) {
+        for (let node of Object.values(wire)) {
+            let x;
+            let y;
+            switch (node.type) {
+                case "position":
+                    x = node.x + 0.5;
+                    y = node.y + 0.5;
+                    break;
+                case "blockPin":
+                    let block = blocks[node.block];
+                    x = block.pins[node.pin].x + block.x;
+                    y = block.pins[node.pin].y + block.y;
+                    break;
+                case "wireNode":
+                    let i = 0;
+                    for (let j in Object.keys(wires[node.wire])) {
+                        if (wires[node.wire][j].positionId == node.nodeId) {
+                            i = j;
+                            continue;
+                        }
+                    }
+                    x = wires[node.wire][i].x + 0.5;
+                    y = wires[node.wire][i].y + 0.5;
+                    break;
+            }
+            node.coords = {
+                x: x,
+                y: y
+            };
+        }
+    }
 }
-setInterval(prova, 50);
+
+//function prova(canvas = document.getElementById("canvas")) {
+//    //blocks["te4h9t4t4"].angle += 0.05;
+//    draw(canvas);
+//}
+//setInterval(prova, 50);
 
 function transformCanvas(x, y, scale, angle, ctx) {
     // get direction and length of x axis
@@ -476,6 +523,38 @@ function resizeGameCanvas(c) {
 
     canvas.width = width * dpi;
     canvas.height = height * dpi;
+
+    draw(canvas);
+}
+
+function onmousedown(e) {
+    // Normalize coords
+    let x = e.x / scale;
+    let y = e.y / scale;
+    // Reset selection
+    selectedBlockId = undefined;
+    selectedWireId = undefined;
+    // Try to select a block
+    for (let id in blocks) {
+        if (blocks[id].x == Math.round(x) && blocks[id].y == Math.round(y)) {
+            selectedBlockId = id;
+            break;
+        }
+    }
+    // Try to select a wire
+    if (selectedBlockId == undefined) {
+        for (let id in wires) {
+            for (let j = 1; j < wires[id].length; j++) {
+                let coordsA = wires[id][j - 1].coords;
+                let coordsB = wires[id][j].coords;
+                if (pDistance(x + 0.5, y + 0.5, coordsA.x, coordsA.y, coordsB.x, coordsB.y) < 0.2) {
+                    selectedWireId = id;
+                    break;
+                }
+            }
+        }
+    }
+    draw(canvas);
 }
 
 window.addEventListener('resize', resizeGameCanvas, false);
