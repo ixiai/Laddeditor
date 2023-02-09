@@ -31,158 +31,16 @@ function pDistance(x, y, x1, y1, x2, y2) {
 }
 
 
-let colours = {
-    bg: "#000000",
-    line: "#E0E0E0"
-};
-
-let scale = 40;
-let selectedBlockId;
-let selectedWireId;
-
-const blocksDef = {
-    power: {
-        draw: function (block, ctx) {
-            ctx.lineWidth = 0.05;
-            ctx.beginPath();
-            ctx.moveTo(0.4, 0.05);
-            ctx.lineTo(0.6, 0.05);
-            ctx.lineTo(0.5, 0.5);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(0.5, 0.2);
-            ctx.lineTo(0.5, 1);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(0.4, 0.7);
-            ctx.lineTo(0.6, 0.6);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(0.4, 0.6);
-            ctx.lineTo(0.6, 0.5);
-            ctx.stroke();
-        },
-        pins: [
-            {
-                position: {
-                    x: 0.5,
-                    y: 1
-                }
-            }
-        ]
-    },
-    switch: {
-        draw: function (block, ctx) {
-            ctx.lineWidth = 0.05;
-            ctx.beginPath();
-            ctx.moveTo(0.5, 0);
-            ctx.lineTo(0.5, 1);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(0.8, 0.5);
-            ctx.lineTo(block.state == "closed" ? 0.5 : 0.2, 0.5);
-            ctx.stroke();
-        },
-        pins: [
-            {
-                position: {
-                    x: 0.5,
-                    y: 0
-                }
-            },
-            {
-                position: {
-                    x: 0.5,
-                    y: 1
-                }
-            }
-        ]
-    },
-    switch2: {
-        draw: function (block, ctx) {
-            ctx.lineWidth = 0.05;
-            ctx.beginPath();
-            ctx.moveTo(0.5, 0);
-            ctx.lineTo(0.5, 1);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(0.5, 0.5);
-            ctx.lineTo(block.direction == "left" ? 0 : 1, 0.5);
-            ctx.stroke();
-            let direction = block.direction == "left" ? -1 : 1;
-            let state = block.state == "straight" ? 1 : 0;
-            ctx.beginPath();
-            ctx.moveTo(0.5 - direction * 0.2 * (!state), 0.75 + 0.2 * (!state));
-            ctx.lineTo(0.5 + 0.25 * direction + 0.2 * direction * state, 0.5 - 0.2 * state);
-            ctx.stroke();
-        },
-        pins: [
-            {
-                position: {
-                    x: 0.5,
-                    y: 0
-                }
-            },
-            {
-                position: {
-                    x: 0.5,
-                    y: 1
-                }
-            }
-        ]
-    },
-    neutralRelay: {
-        draw: function (block, ctx) {
-            ctx.lineWidth = 0.05;
-            ctx.beginPath();
-            ctx.arc(0.5, 0.5, 0.35, 0, 2 * Math.PI);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(0.5, 0);
-            ctx.lineTo(0.5, 0.15);
-            ctx.stroke();
-            ctx.lineWidth = 0.03;
-            ctx.beginPath();
-            ctx.moveTo(0.075, 0.25);
-            ctx.lineTo(0.075, 0.75);
-            ctx.stroke();
-            let highLow = block.state == "on" ? -1 : 1;
-            ctx.moveTo(0.025, 0.5 + highLow * 0.15);
-            ctx.lineTo(0.075, 0.5 + highLow * 0.25);
-            ctx.lineTo(0.125, 0.5 + highLow * 0.15);
-            ctx.stroke();
-            ctx.lineWidth = block.retardedOn ? 0.12 : 0.05;
-            ctx.beginPath();
-            ctx.moveTo(0.15, 0.15);
-            ctx.lineTo(0.85, 0.15);
-            ctx.stroke();
-            ctx.lineWidth = block.retardedOff ? 0.12 : 0.05;
-            ctx.beginPath();
-            ctx.moveTo(0.15, 0.85);
-            ctx.lineTo(0.85, 0.85);
-            ctx.stroke();
-        },
-        pins: [
-            {
-                position: {
-                    x: 0.5,
-                    y: 0
-                }
-            }
-        ]
-    }
-};
-
-let wires = {};
-let blocks = {};
-
 function init() {
-    let canvas = document.getElementById("canvas");
+    canvas = document.getElementById("canvas");
+    ctx = canvas.getContext("2d");
     canvas.addEventListener("mousedown", onmousedown);
+    canvas.addEventListener("mousemove", onmousemove);
+    document.addEventListener("keydown", onkeydown);
     loadSchematic();
     resizeGameCanvas(canvas);
 
-    draw(canvas);
+    window.requestAnimationFrame(draw);
 }
 
 function loadSchematic() {
@@ -359,105 +217,6 @@ function loadSchematic() {
 
 let X = false;
 
-function draw(canvas) {
-    const ctx = canvas.getContext("2d");
-    transformCanvas(0, 0, 1, 0, ctx);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = colours.bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = colours.line;
-    // Draw blocks
-    for (let id in blocks) {
-        let block = blocks[id];
-        ctx.save();
-        if (block.type == null) throw new Error("Block type is null", block);
-        const blockType = blocksDef[block.type];
-        if (blockType == null) throw new Error("Block type " + block.type + " does not exist", block);
-        transformCanvas(block.x * scale, block.y * scale, scale, block.angle, ctx);
-        let squarePath = new Path2D();
-        squarePath.rect(0, 0, 1, 1);
-        ctx.clip(squarePath);
-        ctx.font = "0.3px Arial";
-        ctx.textBaseline = "middle";
-        if (id == selectedBlockId) {
-            ctx.fillStyle = '#FF000050';
-            ctx.fillRect(0, 0, 1, 1);
-        }
-        ctx.fillStyle = colours.line;
-        ctx.strokeStyle = colours.line;
-        blockType.draw(block, ctx);
-        ctx.restore();
-    }
-    // Draw tags
-    ctx.font = "0.3px Arial";
-    ctx.textBaseline = "middle";
-    for (let block of Object.values(blocks)) {
-        ctx.save();
-        if (block.type == null) throw new Error("Block type is null", block);
-        const blockType = blocksDef[block.type];
-        if (blockType == null) throw new Error("Block type " + block.type + " does not exist", block);
-        let offsetX = block.nameTag.position == "left" ? 0 : (block.nameTag.position == "right" ? 1 : 0.5);
-        let offsetY = block.nameTag.position == "top" ? -0.1 : (block.nameTag.position == "bottom" ? 1.1 : 0.5);
-        ctx.textBaseline = block.nameTag.position == "top" ? "Bottom" : (block.nameTag.position == "bottom" ? "Top" : "Middle");
-        ctx.textAlign = block.nameTag.position == "left" ? "right" : (block.nameTag.position == "right" ? "left" : "center");
-        transformCanvas((block.x + offsetX) * scale,
-            (block.y + offsetY) * scale,
-            scale,
-            block.nameTag.angle || 0,
-            ctx);
-        ctx.fillText(block.nameTag.value, 0, 0);
-    }
-    // Draw wires
-    ctx.save();
-    for (let id in wires) {
-        ctx.lineWidth = id == selectedWireId ? 0.15 : 0.05;
-        let wire = wires[id];
-        ctx.strokeStyle = colours.line;
-        ctx.fillStyle = colours.line;
-        ctx.beginPath();
-        let beginning = true;
-        let nodesToDraw = [];
-        for (let node of Object.values(wire)) {
-            let x = node.coords.x;
-            let y = node.coords.y;
-            switch (node.type) {
-                case "position":
-                    transformCanvas(0, 0, scale, 0, ctx);
-                    break;
-                case "blockPin":
-                    let block = blocks[node.block];
-                    transformCanvas(0, 0, scale, block.angle, ctx);
-                    break;
-                case "wireNode":
-                    let i = 0;
-                    for (let j in Object.keys(wires[node.wire])) {
-                        if (wires[node.wire][j].positionId == node.nodeId) {
-                            i = j;
-                            continue;
-                        }
-                    }
-                    nodesToDraw.push({ x: x, y: y });
-                    transformCanvas(0, 0, scale, 0, ctx);
-                    break;
-            }
-            if (beginning) {
-                beginning = false;
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        }
-        ctx.stroke();
-        for (let node of nodesToDraw) {
-            transformCanvas(0, 0, scale, 0, ctx);
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, 0.075, 0, 2 * Math.PI);
-            ctx.fill();
-        }
-    }
-    ctx.restore();
-    transformCanvas(0, 0, 1, 0, ctx);
-}
 
 function computeWireCoords() {
     for (let wire of Object.values(wires)) {
@@ -523,39 +282,142 @@ function resizeGameCanvas(c) {
 
     canvas.width = width * dpi;
     canvas.height = height * dpi;
-
-    draw(canvas);
 }
 
-function onmousedown(e) {
-    // Normalize coords
-    let x = e.x / scale;
-    let y = e.y / scale;
-    // Reset selection
-    selectedBlockId = undefined;
-    selectedWireId = undefined;
-    // Try to select a block
-    for (let id in blocks) {
-        if (blocks[id].x == Math.round(x) && blocks[id].y == Math.round(y)) {
-            selectedBlockId = id;
+function generateNewBlock(type) {
+    let block = {};
+    block.angle = 0;
+    block.nameTag = { position: "bottom", value: "noName" };
+    switch (type) {
+        case "neutralRelay":
+            block.retardedOff = 0;
+            block.retardedOn = 0;
+        case "oscillatingRelay":
+            block.pins = [{ x: 0.5, y: 0 }];
+            block.state = "off";
             break;
-        }
+        case "bistableRelay":
+            block.state = "off";
+        case "mechanicallyBistableRelay":
+            block.state = "normal";
+            block.pins = [{ x: 0, y: 0.5 }, { x: 1, y: 0.5 }];
+            break;
+        case "switch":
+            block.state = "open";
+            block.pins = [{ x: 0.5, y: 0 }, { x: 0.5, y: 1 }];
+            break;
+        case "power":
+            block.pins = [{ x: 0.5, y: 0 }];
+            break;
     }
-    // Try to select a wire
-    if (selectedBlockId == undefined) {
-        for (let id in wires) {
-            for (let j = 1; j < wires[id].length; j++) {
-                let coordsA = wires[id][j - 1].coords;
-                let coordsB = wires[id][j].coords;
-                if (pDistance(x + 0.5, y + 0.5, coordsA.x, coordsA.y, coordsB.x, coordsB.y) < 0.2) {
-                    selectedWireId = id;
-                    break;
+    block.type = type;
+    typingNewName = "";
+    return block;
+}
+
+
+function updateWires() {
+    connectBlocksToBlocks();
+    connectWiresToBlocks();
+    disconnectWiresFromRemovedBlocks();
+    disconnectWiresFromRemovedWires();
+}
+
+function connectBlocksToBlocks() {
+    for (let idA in blocks) {
+        for (let idB in blocks) {
+            let blockA = blocks[idA];
+            let blockB = blocks[idB];
+            if (idA != idB &&
+                Math.abs(blockA.x - blockB.x == 1) &&
+                Math.abs(blockA.y - blockB.y == 1)) {
+                for (let idPinA in blockA.pins) {
+                    for (let idPinB in blockB.pins) {
+                        let connectionAlreadyExists = false;
+                        let nodeCounter;
+                        for (let wire of Object.values(wires)) {
+                            nodeCounter = 0;
+                            for (let node of Object.values(wire)) {
+                                if (node.type == "blockPin" && (
+                                    node.block == idA && node.pin == idPinA ||
+                                    node.block == idB && node.pin == idPinB)) {
+                                    nodeCounter++;
+                                }
+                            }
+                            if (nodeCounter > 1) {
+                                connectionAlreadyExists = true;
+                            }
+                        }
+                        if (connectionAlreadyExists < 2) {
+                            if (blockA.x + blockA.pins[idPinA].x == blockB.x + blockB.pins[idPinB].x &&
+                                blockA.y + blockA.pins[idPinA].y == blockB.y + blockB.pins[idPinB].y) {
+                                wires[newId()] = [
+                                    { type: "blockPin", block: idA, pin: idPinA, coords: { x: blockA.x + blockA.pins[idPinA].y, y: blockA.x + blockA.pins[idPinA].y } },
+                                    { type: "blockPin", block: idB, pin: idPinB, coords: { x: blockA.x + blockA.pins[idPinA].y, y: blockA.x + blockA.pins[idPinA].y } },
+                                ];
+                            }
+                        }
+                    }
                 }
             }
         }
     }
-    draw(canvas);
 }
+
+function connectWiresToBlocks() {
+    for (let wire of Object.values(wires)) {
+        for (let node of Object.values(wire)) {
+            if (node.type == "position") {
+                for (let id in blocks) {
+                    for (let idPin in blocks[id].pins) {
+                        if (blocks[id].x + blocks[id].pins[idPin].x == node.coords.x &&
+                            blocks[id].y + blocks[id].pins[idPin].y == node.coords.y) {
+                            node.type = "blockPin";
+                            block = id;
+                            pin = idPin;
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+function disconnectWiresFromRemovedBlocks() {
+    for (let wire of Object.values(wires)) {
+        for (let node of Object.values(wire)) {
+            if (node.type == "blockPin") {
+                if (blocks[node.block] == undefined) {
+                    node.type = "position";
+                    node.positionId = newId();
+                    delete node.block;
+                    delete node.pin;
+                }
+            }
+        }
+    }
+}
+
+function disconnectWiresFromRemovedWires() {
+    for (let wire of Object.values(wires)) {
+        for (let node of Object.values(wire)) {
+            if (node.type == "wireNode") {
+                if (wires[node.wire] == undefined) {
+                    node.type = "position";
+                    node.positionId = newId();
+                    delete node.wire;
+                    delete node.nodeId;
+                }
+            }
+        }
+    }
+}
+
+function newId() {
+    return new Date() * 1 + "";
+}
+
 
 window.addEventListener('resize', resizeGameCanvas, false);
 window.addEventListener('orientationchange', resizeGameCanvas, false);
