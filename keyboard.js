@@ -37,6 +37,18 @@ function onkeydown(e) {
                     placingNewItem.retardedOff = 1 * !placingNewItem.retardedOff;
                 }
                 break;
+            case "Shift":
+                switch (placingNewItem.state) {
+                    case "on":
+                    case "off":
+                        placingNewItem.state = placingNewItem.state == "off" ? "on" : "off";
+                        break;
+                    case "open":
+                    case "closed":
+                        placingNewItem.state = placingNewItem.state == "open" ? "closed" : "open";
+                        break;
+                }
+                break;
         }
     } else {
         switch (e.key) {

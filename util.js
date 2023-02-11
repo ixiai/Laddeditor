@@ -298,6 +298,8 @@ function generateNewBlock(type) {
             break;
         case "bistableRelay":
             block.state = "off";
+            block.pins = [{ x: 0, y: 0.5 }, { x: 1, y: 0.5 }];
+            break;
         case "mechanicallyBistableRelay":
             block.state = "normal";
             block.pins = [{ x: 0, y: 0.5 }, { x: 1, y: 0.5 }];
@@ -329,8 +331,8 @@ function connectBlocksToBlocks() {
             let blockA = blocks[idA];
             let blockB = blocks[idB];
             if (idA != idB &&
-                Math.abs(blockA.x - blockB.x == 1) &&
-                Math.abs(blockA.y - blockB.y == 1)) {
+                (Math.abs(blockA.x - blockB.x == 1) ||
+                Math.abs(blockA.y - blockB.y == 1))) {
                 for (let idPinA in blockA.pins) {
                     for (let idPinB in blockB.pins) {
                         let connectionAlreadyExists = false;
@@ -348,7 +350,7 @@ function connectBlocksToBlocks() {
                                 connectionAlreadyExists = true;
                             }
                         }
-                        if (connectionAlreadyExists < 2) {
+                        if (!connectionAlreadyExists) {
                             if (blockA.x + blockA.pins[idPinA].x == blockB.x + blockB.pins[idPinB].x &&
                                 blockA.y + blockA.pins[idPinA].y == blockB.y + blockB.pins[idPinB].y) {
                                 wires[newId()] = [
@@ -415,7 +417,7 @@ function disconnectWiresFromRemovedWires() {
 }
 
 function newId() {
-    return new Date() * 1 + "";
+    return Math.round(Math.random() * 10000000000000) + "";
 }
 
 
