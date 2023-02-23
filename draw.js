@@ -98,47 +98,77 @@ function drawTag(block, x = block.x, y = block.y, nameTagValue = block.nameTag.v
 function drawWire(wire, x = undefined, y = undefined) {
     ctx.save();
     ctx.beginPath();
-    let beginning = true;
-    let nodesToDraw = [];
+    //let nodesToDraw = [];
+    let points = [];
     for (let node of Object.values(wire)) {
         let x = node.coords.x;
         let y = node.coords.y;
         switch (node.type) {
             case "position":
-                transformCanvas(0, 0, scale, 0, ctx);
+                points.push({
+                    x: x,
+                    y: y,
+                    a: 0
+                });
                 break;
             case "blockPin":
-                let block = blocks[node.block];
-                transformCanvas(0, 0, scale, block.angle, ctx);
-                break;
-            case "wireNode":
-                let i = 0;
-                for (let j in Object.keys(wires[node.wire])) {
-                    if (wires[node.wire][j].positionId == node.nodeId) {
-                        i = j;
-                        continue;
-                    }
-                }
-                nodesToDraw.push({ x: x, y: y });
-                transformCanvas(0, 0, scale, 0, ctx);
+                points.push({
+                    x: node.coords.x,
+                    y: node.coords.y,
+                    a: blocks[node.block].angle
+                });
                 break;
         }
-        if (beginning) {
-            beginning = false;
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
+    }
+    ctx.beginPath();
+    for (let pId in points) {
+        let p = points[pId];
+        transformCanvas(0, 0, scale, p.a, ctx);
+        if (pId == 0) {                         // First point
+            ctx.moveTo(p.x, p.y);
+        } else if (pId == points.length - 1) {  // Last point
+            ctx.lineTo(p.x, p.y);
+        } else {                                // Intermediate points
+            let prev = points[pId * 1 - 1];
+            let next = points[pId * 1 + 1];
+            let dx = 0;
+            let dy = 0;
+            const bevel = 0.1;
+            if (prev.x == p.x) {
+                if (prev.y > p.y) {
+                    dy = bevel;
+                } else if (prev.y < p.y) {
+                    dy = -bevel;
+                }
+            } else if (prev.y == p.y) {
+                if (prev.x > p.x) {
+                    dx = bevel;
+                } else if (prev.x < p.x) {
+                    dx = -bevel;
+                }
+            }
+            ctx.lineTo(p.x + dx, p.y + dy);
+            dx = 0;
+            dy = 0;
+            if (next.x == p.x) {
+                if (next.y > p.y) {
+                    dy = bevel;
+                } else if (next.y < p.y) {
+                    dy = -bevel;
+                }
+            } else if (next.y == p.y) {
+                if (next.x > p.x) {
+                    dx = bevel;
+                } else if (next.x < p.x) {
+                    dx = -bevel;
+                }
+            }
+            ctx.lineTo(p.x + dx, p.y + dy);
         }
     }
     if (x != undefined && y != undefined) {
         ctx.lineTo(Math.round(x / scale) + 0.5, Math.round(y / scale) + 0.5);
     }
     ctx.stroke();
-    for (let node of nodesToDraw) {
-        transformCanvas(0, 0, scale, 0, ctx);
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, 0.075, 0, 2 * Math.PI);
-        ctx.fill();
-    }
     ctx.restore();
 }

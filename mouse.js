@@ -22,7 +22,7 @@ function onmousedown(e) {
     // Try to select a block
     selectedBlockId = snapToBlocks(x, y);
     // Clicked twice on same block: user wants to edit it
-    if (selectedBlockId != undefined && wasSelectedBlockId == selectedBlockId && placingNewWire == null) {
+    if (selectedBlockId != undefined && wasSelectedBlockId == selectedBlockId && placingNewWire == false) {
         placingNewItem = blocks[selectedBlockId];
         console.log(placingNewItem);
         typingNewName = blocks[selectedBlockId].nameTag.value;
@@ -30,7 +30,9 @@ function onmousedown(e) {
     }
 
     // Try to select a wire
-    selectedWireId = snapToWires(x, y);
+    if (placingNewWire == false) {
+        selectedWireId = snapToWires(x, y);
+    }
 
 
     if (placingNewWire !== false) {
@@ -39,7 +41,7 @@ function onmousedown(e) {
             let distanceToNearestPin = Number.POSITIVE_INFINITY;
             for (let idPin in blocks[selectedBlockId].pins) {
                 let pin = blocks[selectedBlockId].pins[idPin];
-                let distanceToPin = Math.sqrt(Math.pow(blocks[selectedBlockId].x + pin.x - x, 2) + Math.pow(blocks[selectedBlockId].y + pin.y - y, 2));
+                let distanceToPin = Math.sqrt(Math.pow(blocks[selectedBlockId].x + pin.x - x - 0.5, 2) + Math.pow(blocks[selectedBlockId].y + pin.y - y - 0.5, 2));
                 if (distanceToPin < distanceToNearestPin) {
                     distanceToNearestPin = distanceToPin;
                     nearestPin = idPin;
@@ -84,9 +86,9 @@ function onmousedown(e) {
     }
 
     if (selectedBlockId != undefined) {
-        console.log("Block " + selectedBlockId);
+        console.log("Block " + selectedBlockId, blocks[selectedBlockId]);
     } else if (selectedWireId != undefined) {
-        console.log("Wire " + selectedWireId);
+        console.log("Wire " + selectedWireId, wires[selectedWireId]);
     }
     updateWires();
 }

@@ -190,9 +190,15 @@ function loadSchematic() {
     ];
     wires["908rh90bra"] = [
         {
-            type: "wireNode",
-            wire: "bg982wgb9",
-            nodeId: "gf97b79842b"
+            type: "blockPin",
+            block: "g9rbg94a",
+            pin: 0
+        },
+        {
+            type: "position",
+            positionId: "gf97b79842b",
+            x: 4,
+            y: 3
         },
         {
             type: "position",
