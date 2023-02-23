@@ -1,5 +1,5 @@
 function onkeydown(e) {
-    console.log(e.key);
+    //console.log(e.key);
     placingNewWire = false;
     if (typingNewName !== false) {
         if (e.key.length == 1) {
@@ -107,6 +107,11 @@ function onkeydown(e) {
             case "Escape":
                 placingNewItem = null;
                 placingNewWire = false;
+                break;
+            case "End":     // End of the drawing!
+                updateWires();
+                getFormulas();
+                save();
                 break;
         }
     }

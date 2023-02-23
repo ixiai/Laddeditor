@@ -325,10 +325,60 @@ function generateNewBlock(type) {
 
 
 function updateWires() {
+    //interruptWiresWithContacts(); // ++++++++++ TODO ++++++++++
     connectBlocksToBlocks();
     connectWiresToBlocks();
     disconnectWiresFromRemovedBlocks();
     disconnectWiresFromRemovedWires();
+}
+
+function interruptWiresWithContacts() {
+    for (let id in blocks) {
+        let block = blocks[id];
+        if (block.type != "switch") {
+            continue;
+        }
+        if (block.angle % (Math.PI / 2) < 0.01) {
+            interruptWireWithContact(id, Math.round((block.angle % (2 * Math.PI)) / (Math.PI / 2)));
+        }
+    }
+}
+
+function interruptWireWithContact(blockId, orientation) {
+    let block = blocks[blockId];
+    switch (orientation) {
+        case 0: // Vertical (standard)
+        case 2: // Vertical reversed
+            cutWirePassingFromHere(block.x + 0.5, "x", block.y);
+            break;
+        case 1: // Horizontal
+        case 3: // Horizontal reversed
+            cutWirePassingFromHere(block.y + 0.5, "y", block.x);
+            break;
+    }
+}
+
+function cutWirePassingFromHere(where, what, include) {
+    let otherWhat = what == "x" ? "y" : "x";
+    for (let id in wires) {
+        let wire = wires[id];
+        if (wire.coords != undefined && wire.coords.length) {
+            for (let j = 1; j < wire.coords.length; j++) {
+                if (wire.coords[j][what] == where && wire.coords[j - 1][what] == wire.coords[j][what] &&
+                    Math.min(wire.coords[j - 1][otherWhat], wire.coords[j][otherWhat]) < include && Math.max(wire.coords[j - 1][otherWhat], wire.coords[j][otherWhat]) > include) {
+                    cutWireHere(id, j, otherWhat, include);
+                }
+            }
+        }
+    }
+}
+
+function cutWireHere(id, j, otherWhat, include) {
+    // ++++++++++ For now it just makes two new points - Should instead make two separated wires ++++++++++
+    let wire = wires[id];
+    wire.coords.splice(j, 0, wire.coords[j]);
+    wire.coords[j][otherWhat] = include - 0.5;
+    wire.coords[j + 1][otherWhat] = include + 0.5;
 }
 
 function connectBlocksToBlocks() {
@@ -338,7 +388,7 @@ function connectBlocksToBlocks() {
             let blockB = blocks[idB];
             if (idA != idB &&
                 (Math.abs(blockA.x - blockB.x == 1) ||
-                Math.abs(blockA.y - blockB.y == 1))) {
+                    Math.abs(blockA.y - blockB.y == 1))) {
                 for (let idPinA in blockA.pins) {
                     for (let idPinB in blockB.pins) {
                         let connectionAlreadyExists = false;
