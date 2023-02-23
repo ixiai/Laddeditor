@@ -8,6 +8,7 @@ function onmousedown(e) {
     selectedWireId = undefined;
 
 
+    // Release new item on the drawing
     if (placingNewItem != null) {
         placingNewItem.x = Math.round(lastMouseCoords.x / scale);
         placingNewItem.y = Math.round(lastMouseCoords.y / scale);
@@ -21,7 +22,7 @@ function onmousedown(e) {
     // Try to select a block
     selectedBlockId = snapToBlocks(x, y);
     // Clicked twice on same block: user wants to edit it
-    if (selectedBlockId != undefined && wasSelectedBlockId == selectedBlockId) {
+    if (selectedBlockId != undefined && wasSelectedBlockId == selectedBlockId && placingNewWire == null) {
         placingNewItem = blocks[selectedBlockId];
         console.log(placingNewItem);
         typingNewName = blocks[selectedBlockId].nameTag.value;

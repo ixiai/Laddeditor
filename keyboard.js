@@ -63,30 +63,44 @@ function onkeydown(e) {
                 }
                 break;
             case "n":       // Neutral relay
+                selectedBlockId = null;
+                selectedWireId = null;
                 placingNewItem = generateNewBlock("neutralRelay");
                 placingNewWire = false;
                 break;
             case "b":       // Bistable relay
+                selectedBlockId = null;
+                selectedWireId = null;
                 placingNewItem = generateNewBlock("bistableRelay");
                 placingNewWire = false;
                 break;
             case "m":       // Mechanically bistable relay
+                selectedBlockId = null;
+                selectedWireId = null;
                 placingNewItem = generateNewBlock("mechanicallyBistableRelay");
                 placingNewWire = false;
                 break;
             case "h":       // Oscillating relay
+                selectedBlockId = null;
+                selectedWireId = null;
                 placingNewItem = generateNewBlock("oscillatingRelay");
                 placingNewWire = false;
                 break;
             case "k":       // Contact
+                selectedBlockId = null;
+                selectedWireId = null;
                 placingNewItem = generateNewBlock("switch");
                 placingNewWire = false;
                 break;
             case "p":       // Power source
+                selectedBlockId = null;
+                selectedWireId = null;
                 placingNewItem = generateNewBlock("power");
                 placingNewWire = false;
                 break;
             case ".":       // Wire (it kinda connects the dots! fun game innit?)
+                selectedBlockId = null;
+                selectedWireId = null;
                 placingNewItem = null;
                 placingNewWire = [];
                 break;
